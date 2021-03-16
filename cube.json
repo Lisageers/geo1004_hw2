@@ -1,0 +1,22 @@
+{
+	"type": "CityJSON",
+	"version": "1.0",
+	"CityObjects": {
+		"id-1": {
+			"type": "Building",
+			"attributes": {},
+			"geographicalExtent":[],
+			"children": []
+		}
+	},
+	"vertices": [
+		[1, 1, -1],
+		[1, -1, -1],
+		[-1, -1, -1],
+		[-1, 1, -1],
+		[-1, -1, 1],
+		[1, -1, 1],
+		[1, 1, 1],
+		[-1, 1, 1]
+	]
+}

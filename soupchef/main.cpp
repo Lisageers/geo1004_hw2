@@ -1,5 +1,9 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <list>
+#include <string>
+#include <unordered_map>
 #include "DCEL.hpp"
 
 // forward declarations; these functions are given below main()
@@ -14,9 +18,115 @@ void printDCEL(DCEL & D);
 */
 // 1.
 void importOBJ(DCEL & D, const char *file_in) {
-  // to do
+    std::string line;
+    std::ifstream input(file_in);
+    double x, y, z;
+    int v0, v1, v2;
+    int linecounter = 0;
+    std::unordered_map<int, Vertex*> vertices;
+    // read lines
+    while (std::getline(input, line)) {
+        linecounter++;
+        // if line starts with v
+        if (line[0] == 'v') {
+            // split line at spaces
+            std::istringstream ss(line);
+            // move to second element
+            std::string word;
+            ss >> word;
+            ss >> word;
+            // create x with string converted to double
+            x = std::stof(word);
+            // move one further to get y
+            ss >> word;
+            y = std::stof(word);
+            // move one further to get z
+            ss >> word;
+            z = std::stof(word);
+            // put vertex point in vector
+            Vertex* v = D.createVertex(x, y, z);
+            vertices[linecounter] = v;
+        }
+            // if line starts with f
+        else if (line[0] == 'f')
+        {
+            // split line at spaces
+            std::istringstream ss(line);
+            // initialise
+            std::string word;
+            // move two to get first vertex
+            ss >> word;
+            ss >> word;
+            v0 = std::stoi(word);
+            // move one further to get second
+            ss >> word;
+            v1 = std::stoi(word);
+            // move one further to get third
+            ss >> word;
+            v2 = std::stoi(word);
+
+            // dcel
+            HalfEdge* e0 = D.createHalfEdge();
+            HalfEdge* e1 = D.createHalfEdge();
+            HalfEdge* e2 = D.createHalfEdge();
+
+
+            HalfEdge* e3 = D.createHalfEdge();
+            HalfEdge* e4 = D.createHalfEdge();
+            HalfEdge* e5 = D.createHalfEdge();
+            Face* f = D.createFace();
+
+            e0->origin = vertices[v0];
+            e0->destination = vertices[v1];
+            e0->twin = e3;
+            e0->next = e1;
+            e0->prev = e2;
+            e0->incidentFace = f;
+
+            e1->origin = vertices[v1];
+            e1->destination = vertices[v2];
+            e1->twin = e4;
+            e1->next = e2;
+            e1->prev = e0;
+            e1->incidentFace = f;
+
+            e2->origin = vertices[v2];
+            e2->destination = vertices[v0];
+            e2->twin = e5;
+            e2->next = e0;
+            e2->prev = e1;
+            e2->incidentFace = f;
+
+            e3->origin = vertices[v1];
+            e3->destination = vertices[v0];
+            e3->twin = e0;
+            e3->next = e5;
+            e3->prev = e4;
+            e3->incidentFace = D.infiniteFace();
+
+            e4->origin = vertices[v2];
+            e4->destination = vertices[v1];
+            e4->twin = e1;
+            e4->next = e3;
+            e4->prev = e5;
+            e4->incidentFace = D.infiniteFace();
+
+            e5->origin = vertices[v0];
+            e5->destination = vertices[v2];
+            e5->twin = e2;
+            e5->next = e4;
+            e5->prev = e3;
+            e5->incidentFace = D.infiniteFace();
+
+            f->exteriorEdge = e0;
+
+        }
+
+    }
+    input.close();
+
 }
-// 2.
+    // 2.
 void groupTriangles(DCEL & D) {
   // to do
 }
@@ -30,23 +140,57 @@ void mergeCoPlanarFaces(DCEL & D) {
 }
 // 5.
 void exportCityJSON(DCEL & D, const char *file_out) {
-  // to do
+    std::ofstream myfile(file_out);
+    myfile << "{\n";
+    myfile << "\t\"type\"" << ":" << " \"CityJSON\"" << ",\n";
+    myfile << "\t\"version\"" << ":" << " \"1.0\"" << ",\n";
+
+    myfile << "\t\"CityObjects\"" << ":" << " {\n";
+    myfile << "\t\t\"id-1\"" << ":" << " {\n";
+    myfile << "\t\t\t\"type\"" << ":" << " \"Building\"" << ",\n";
+    myfile << "\t\t\t\"attributes\"" << ":" << " {},\n";
+    myfile << "\t\t\t\"geographicalExtent\"" << ":" <<"[],\n";
+    myfile << "\t\t\t\"children\"" << ":" <<" []\n";
+    myfile << "\t\t}\n";
+    myfile << "\t},\n";
+
+    myfile << "\t\"vertices\"" << ":" << " [\n";
+    int loopcounter = 0;
+    const auto &vertices = D.vertices();
+    for ( const auto & v : vertices ) {
+        loopcounter++;
+        myfile << "\t\t[" << v->x << ", " << v->y << ", " << v->z;
+        if (loopcounter < vertices.size())
+        {
+            myfile << "],\n";
+        }
+        else
+        {
+            myfile << "]\n";
+        }
+    }
+    myfile << "\t]\n";
+    myfile << "}\n";
+
+    myfile.close();
 }
 
 
-int main(int argc, const char * argv[]) {
-  const char *file_in = "bk_soup.obj";
-  const char *file_out = "bk.json";
+int main(int argc, const char * argv[])
+{
+  const char *file_in = "../../cube_soup.obj";
+  const char *file_out = "../../cube.json";
 
   // Demonstrate how to use the DCEL to get you started (see function implementation below)
   // you can remove this from the final code
-  DemoDCEL();
+//  DemoDCEL();
 
   // create an empty DCEL
   DCEL D;
 
   // 1. read the triangle soup from the OBJ input file and convert it to the DCEL,
-  
+    importOBJ(D, file_in);
+    printDCEL(D);
   // 2. group the triangles into meshes,
   
   // 3. determine the correct orientation for each mesh and ensure all its triangles 
@@ -56,6 +200,7 @@ int main(int argc, const char * argv[]) {
   // 4. merge adjacent triangles that are co-planar into larger polygonal faces.
   
   // 5. write the meshes with their faces to a valid CityJSON output file.
+    exportCityJSON(D, file_out);
 
   return 0;
 }
