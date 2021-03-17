@@ -5,8 +5,152 @@
 		"id-1": {
 			"type": "Building",
 			"attributes": {},
-			"geographicalExtent":[],
-			"children": []
+			"geometry": [],
+			"children": [
+				"id-2",
+				"id-3",
+				"id-4",
+				"id-5",
+				"id-6",
+				"id-7",
+				"id-8",
+				"id-9",
+				"id-10",
+				"id-11",
+				"id-12",
+				"id-13"]
+		},
+		"id-2": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[2, 3, 0]]
+				]
+			}]
+		},
+		"id-3": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[6, 0, 1]]
+				]
+			}]
+		},
+		"id-4": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[4, 7, 6]]
+				]
+			}]
+		},
+		"id-5": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[5, 4, 2]]
+				]
+			}]
+		},
+		"id-6": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[0, 6, 7]]
+				]
+			}]
+		},
+		"id-7": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[6, 5, 1]]
+				]
+			}]
+		},
+		"id-8": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[5, 1, 2]]
+				]
+			}]
+		},
+		"id-9": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[0, 1, 2]]
+				]
+			}]
+		},
+		"id-10": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[4, 2, 3]]
+				]
+			}]
+		},
+		"id-11": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[6, 5, 4]]
+				]
+			}]
+		},
+		"id-12": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[0, 3, 7]]
+				]
+			}]
+		},
+		"id-13": {
+			"type": "BuildingPart",
+			"parents": "id-1",
+			"geometry": [{
+				"type": "MultiSurface",
+				"lod": "2",
+				"boundaries":[
+				[[3, 7, 4]]
+				]
+			}]
 		}
 	},
 	"vertices": [

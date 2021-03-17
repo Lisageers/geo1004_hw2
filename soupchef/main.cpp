@@ -17,13 +17,14 @@ void printDCEL(DCEL & D);
   After each function you should have a DCEL without invalid elements!
 */
 // 1.
-void importOBJ(DCEL & D, const char *file_in) {
+std::unordered_map< Vertex*, int> importOBJ(DCEL & D, const char *file_in) {
     std::string line;
     std::ifstream input(file_in);
     double x, y, z;
     int v0, v1, v2;
     int linecounter = 0;
     std::unordered_map<int, Vertex*> vertices;
+    std::unordered_map<Vertex*, int> vertices_reverse;
     // read lines
     while (std::getline(input, line)) {
         linecounter++;
@@ -46,6 +47,7 @@ void importOBJ(DCEL & D, const char *file_in) {
             // put vertex point in vector
             Vertex* v = D.createVertex(x, y, z);
             vertices[linecounter] = v;
+            vertices_reverse[v] = linecounter;
         }
             // if line starts with f
         else if (line[0] == 'f')
@@ -124,6 +126,7 @@ void importOBJ(DCEL & D, const char *file_in) {
 
     }
     input.close();
+    return vertices_reverse;
 
 }
     // 2.
@@ -139,7 +142,7 @@ void mergeCoPlanarFaces(DCEL & D) {
   // to do
 }
 // 5.
-void exportCityJSON(DCEL & D, const char *file_out) {
+void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, int> verticesdict) {
     std::ofstream myfile(file_out);
     myfile << "{\n";
     myfile << "\t\"type\"" << ":" << " \"CityJSON\"" << ",\n";
@@ -149,18 +152,79 @@ void exportCityJSON(DCEL & D, const char *file_out) {
     myfile << "\t\t\"id-1\"" << ":" << " {\n";
     myfile << "\t\t\t\"type\"" << ":" << " \"Building\"" << ",\n";
     myfile << "\t\t\t\"attributes\"" << ":" << " {},\n";
-    myfile << "\t\t\t\"geographicalExtent\"" << ":" <<"[],\n";
-    myfile << "\t\t\t\"children\"" << ":" <<" []\n";
-    myfile << "\t\t}\n";
-    myfile << "\t},\n";
+    myfile << "\t\t\t\"geometry\"" << ":" <<" [],\n";
+    myfile << "\t\t\t\"children\"" << ":" <<" [\n";
+    for (int i=0;i<D.faces().size();i++)
+    {
+        myfile << "\t\t\t\t\"id-" << (i+2) << "\"";
+        if (i < D.faces().size()-1)
+        {
+            myfile << ",\n";
+        }
+        else
+        {
+            myfile << "]\n";
+        }
+    }
+    myfile << "\t\t},\n";
 
+    // write faces
+    int loopcounterf = 0;
+    const auto & faces = D.faces();
+    for ( const auto & f : faces )
+    {
+        loopcounterf++;
+        myfile << "\t\t\"id-" << (loopcounterf+1) << "\"" << ":" << " {\n";
+        myfile << "\t\t\t\"type\"" << ":" << " \"BuildingPart\"" << ",\n";
+        myfile << "\t\t\t\"parents\"" << ":" << " \"id-1\"" << ",\n";
+
+        myfile << "\t\t\t\"geometry\"" << ":" <<" [{\n";
+        myfile << "\t\t\t\t\"type\"" << ":" << " \"MultiSurface\"" << ",\n";
+        myfile << "\t\t\t\t\"lod\"" << ":" << " \"2\"" << ",\n";
+        myfile << "\t\t\t\t\"boundaries\"" << ":" << "[\n";
+        Vertex* origin = f->exteriorEdge->origin;
+        Vertex* next_vertex = f->exteriorEdge->destination;
+        HalfEdge* next_edge = f->exteriorEdge;
+        myfile << "\t\t\t\t[[" << (verticesdict[origin]-1);
+        myfile << ", " << (verticesdict[next_vertex]-1);
+        while (true)
+        {
+            std::cout << "in\n";
+            next_edge = next_edge->next;
+            next_vertex = next_edge->destination;
+            if (next_vertex != origin)
+            {
+                myfile << ", " << (verticesdict[next_vertex]-1);
+            }
+            else
+            {
+                myfile << "]]\n" << "\t\t\t\t]\n";
+                break;
+            }
+        }
+
+        myfile << "\t\t\t}]\n";
+
+        if (loopcounterf < faces.size())
+        {
+            myfile << "\t\t},\n";
+        }
+        else
+        {
+            myfile << "\t\t}\n";
+        }
+        std::cout << "face " << verticesdict[f->exteriorEdge->destination] << "\n";
+    }
+
+    // write vertices
+    myfile << "\t},\n";
     myfile << "\t\"vertices\"" << ":" << " [\n";
-    int loopcounter = 0;
+    int loopcounterv = 0;
     const auto &vertices = D.vertices();
     for ( const auto & v : vertices ) {
-        loopcounter++;
+        loopcounterv++;
         myfile << "\t\t[" << v->x << ", " << v->y << ", " << v->z;
-        if (loopcounter < vertices.size())
+        if (loopcounterv < vertices.size())
         {
             myfile << "],\n";
         }
@@ -189,7 +253,7 @@ int main(int argc, const char * argv[])
   DCEL D;
 
   // 1. read the triangle soup from the OBJ input file and convert it to the DCEL,
-    importOBJ(D, file_in);
+    std::unordered_map<Vertex*, int> verticesdict = importOBJ(D, file_in);
     printDCEL(D);
   // 2. group the triangles into meshes,
   
@@ -200,7 +264,7 @@ int main(int argc, const char * argv[])
   // 4. merge adjacent triangles that are co-planar into larger polygonal faces.
   
   // 5. write the meshes with their faces to a valid CityJSON output file.
-    exportCityJSON(D, file_out);
+    exportCityJSON(D, file_out, verticesdict);
 
   return 0;
 }
