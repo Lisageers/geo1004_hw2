@@ -212,6 +212,7 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
         HalfEdge* next_edge = f->exteriorEdge;
         myfile << "\t\t\t\t[[" << (verticesdict[origin]-1);
         myfile << ", " << (verticesdict[next_vertex]-1);
+        // loop through edges
         while (true)
         {
             next_edge = next_edge->next;
@@ -220,14 +221,35 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
             {
                 myfile << ", " << (verticesdict[next_vertex]-1);
             }
-            else
+            else // stop when loop is made
             {
-                myfile << "]]\n" << "\t\t\t\t]\n";
+                myfile << "]";
                 break;
             }
         }
-
-        myfile << "\t\t\t}]\n";
+        // write holes
+        const auto & holes = f->holes;
+        for (const auto & h : holes ) {
+            Vertex *origin = h->origin;
+            Vertex *next_vertex = h->destination;
+            HalfEdge *next_edge = h;
+            myfile << ", [" << (verticesdict[origin] - 1);
+            myfile << ", " << (verticesdict[next_vertex] - 1);
+            while (true) {
+                next_edge = next_edge->next;
+                next_vertex = next_edge->destination;
+                if (next_vertex != origin)
+                {
+                    myfile << ", " << (verticesdict[next_vertex] - 1);
+                }
+                else // stop when loop is made
+                {
+                    myfile << "]";
+                    break;
+                }
+            }
+        }
+        myfile << "]\n\t\t\t\t]\n" << "\t\t\t}]\n";
 
         if (loopcounterf < faces.size())
         {
