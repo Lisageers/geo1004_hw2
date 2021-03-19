@@ -27,7 +27,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[0, 1, 2]]
+				[[2, 3, 0]]
 				]
 			}]
 		},
@@ -38,7 +38,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[2, 3, 0]]
+				[[6, 0, 1]]
 				]
 			}]
 		},
@@ -49,7 +49,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[4, 5, 6]]
+				[[4, 7, 6]]
 				]
 			}]
 		},
@@ -60,7 +60,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[6, 7, 4]]
+				[[5, 4, 2]]
 				]
 			}]
 		},
@@ -71,7 +71,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[2, 1, 5]]
+				[[0, 6, 7]]
 				]
 			}]
 		},
@@ -82,7 +82,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[5, 4, 2]]
+				[[6, 5, 1]]
 				]
 			}]
 		},
@@ -93,7 +93,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[1, 0, 6]]
+				[[5, 1, 2]]
 				]
 			}]
 		},
@@ -104,7 +104,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[6, 5, 1]]
+				[[0, 1, 2]]
 				]
 			}]
 		},
@@ -115,7 +115,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[0, 3, 7]]
+				[[4, 2, 3]]
 				]
 			}]
 		},
@@ -126,7 +126,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[7, 6, 0]]
+				[[6, 5, 4]]
 				]
 			}]
 		},
@@ -137,7 +137,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[3, 2, 4]]
+				[[0, 3, 7]]
 				]
 			}]
 		},
@@ -148,7 +148,7 @@
 				"type": "MultiSurface",
 				"lod": "2",
 				"boundaries":[
-				[[4, 7, 3]]
+				[[3, 7, 4]]
 				]
 			}]
 		}

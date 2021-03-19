@@ -5,13 +5,22 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 #include "DCEL.hpp"
 
 // forward declarations; these functions are given below main()
 void DemoDCEL();
 void printDCEL(DCEL & D);
 
-
+typedef std::pair<int,int> pair;
+struct pair_hash
+{
+    template <class T1, class T2>
+    std::size_t operator() (const std::pair<T1, T2> &pair) const
+    {
+        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+    }
+};
 /* 
   Example functions that you could implement. But you are 
   free to organise/modify the code however you want.
@@ -26,7 +35,8 @@ std::unordered_map< Vertex*, int> importOBJ(DCEL & D, const char *file_in) {
     int linecounter = 0;
     std::unordered_map<int, Vertex*> vertices;
     std::unordered_map<Vertex*, int> vertices_reverse;
-    std::unordered_map<Vertex*, std::vector<HalfEdge*>> edges_origins;
+    std::unordered_map<pair,std::vector<HalfEdge*>,pair_hash> edge_points;
+
     // read lines
     while (std::getline(input, line)) {
         linecounter++;
@@ -69,90 +79,77 @@ std::unordered_map< Vertex*, int> importOBJ(DCEL & D, const char *file_in) {
             ss >> word;
             v2 = std::stoi(word);
 
-            // dcel
+            // dcel initialise
             HalfEdge* e0 = D.createHalfEdge();
             HalfEdge* e1 = D.createHalfEdge();
             HalfEdge* e2 = D.createHalfEdge();
             Face* f = D.createFace();
+            f->exteriorEdge = e0;
 
+            // create dcel for first edge
             e0->origin = vertices[v0];
-            // put edge and origin in dict
-            if (!edges_origins[vertices[v0]].empty())
-            {
-                edges_origins[vertices[v0]].push_back(e0);
-            }
-            else
-            {
-                edges_origins.emplace(vertices[v0], std::vector<HalfEdge*>());
-                edges_origins[vertices[v0]].push_back(e0);
-            }
             e0->destination = vertices[v1];
             e0->next = e1;
             e0->prev = e2;
             e0->incidentFace = f;
+            // put edge and points in dict
+            pair  edge_pair = {std::min(v0, v1), std::max(v0, v1)};
+            // if there is an edge in dict
+            if (!edge_points[edge_pair].empty())
+            {
+                edge_points[edge_pair].push_back(e0);
+            }
+            else // if there is no edge yet
+            {
+                edge_points.emplace(edge_pair, std::vector<HalfEdge*>());
+                edge_points[edge_pair].push_back(e0);
+            }
 
+            // create dcel for second edge
             e1->origin = vertices[v1];
-            // put edge and origin in dict
-            if (!edges_origins[vertices[v1]].empty())
-            {
-                edges_origins[vertices[v1]].push_back(e1);
-            }
-            else
-            {
-                edges_origins.emplace(vertices[v1], std::vector<HalfEdge*>());
-                edges_origins[vertices[v1]].push_back(e1);
-            }
             e1->destination = vertices[v2];
             e1->next = e2;
             e1->prev = e0;
             e1->incidentFace = f;
+            // put edge and points in dict
+            edge_pair = {std::min(v1, v2), std::max(v1, v2)};
+            // if there is an edge in dict
+            if (!edge_points[edge_pair].empty())
+            {
+                edge_points[edge_pair].push_back(e1);
+            }
+            else // if there is no edge yet
+            {
+                edge_points.emplace(edge_pair, std::vector<HalfEdge*>());
+                edge_points[edge_pair].push_back(e1);
+            }
 
+            // create dcel for third edge
             e2->origin = vertices[v2];
-            // put edge and origin in dict
-            if (!edges_origins[vertices[v2]].empty())
-            {
-                edges_origins[vertices[v2]].push_back(e2);
-            }
-            else
-            {
-                edges_origins.emplace(vertices[v2], std::vector<HalfEdge*>());
-                edges_origins[vertices[v2]].push_back(e2);
-            }
             e2->destination = vertices[v0];
             e2->next = e0;
             e2->prev = e1;
             e2->incidentFace = f;
-
-//            e3->origin = vertices[v1];
-//            e3->destination = vertices[v0];
-//            e3->twin = e0;
-//            e3->next = e5;
-//            e3->prev = e4;
-//            e3->incidentFace = D.infiniteFace();
-
-            f->exteriorEdge = e0;
+            // put edge and points in dict
+            edge_pair = {std::min(v0, v2), std::max(v0, v2)};
+            // if there is an edge in dict
+            if (!edge_points[edge_pair].empty())
+            {
+                edge_points[edge_pair].push_back(e2);
+            }
+            else // if there is no edge yet
+            {
+                edge_points.emplace(edge_pair, std::vector<HalfEdge*>());
+                edge_points[edge_pair].push_back(e2);
+            }
         }
-
     }
     input.close();
     // link twin edges
-    const auto & halfEdges = D.halfEdges();
-    for ( const auto & e : halfEdges )
+    for (auto const &values: edge_points)
     {
-        // if there is an edge with this edge destination as origin
-        if (!edges_origins[e->destination].empty())
-        {
-            // loop through potential twin edges
-            for (int i=0;i<edges_origins[e->destination].size();i++)
-            {
-                // if the potential twin edge has a destination that is this edges origin
-                if (edges_origins[e->destination][i]->destination == e->origin)
-                {
-                    // update twin
-                    e->twin = edges_origins[e->destination][i];
-                }
-            }
-        }
+        values.second[0]->twin = values.second[1];
+        values.second[1]->twin = values.second[0];
     }
     return vertices_reverse;
 
@@ -268,7 +265,7 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
 
 int main(int argc, const char * argv[])
 {
-  const char *file_in = "../../cube.obj";
+  const char *file_in = "../../cube_soup.obj";
   const char *file_out = "../../cube.json";
 
   // Demonstrate how to use the DCEL to get you started (see function implementation below)
