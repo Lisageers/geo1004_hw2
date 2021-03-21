@@ -60,6 +60,61 @@ float compute_distance(Vertex* &a, Vertex* &b, Vertex* &c, std::vector<double> &
     return abs(d/e);
 }
 
+void orient_faces(HalfEdge* e, std::vector<Face*> visited_faces)
+{
+    Face* f = e->twin->incidentFace;
+    HalfEdge* e0 = f->exteriorEdge;
+    HalfEdge* e1 = f->exteriorEdge->next;
+    HalfEdge* e2 = f->exteriorEdge->next->next;
+
+    for (int i=0;i<visited_faces.size();i++)
+    {
+        if (f == visited_faces[i])
+        {
+            return;
+        }
+    }
+
+    // if the twin edges have the same origin, orientation of the twin is wrong
+    if (e->origin == e->twin->origin)
+    {
+        // switch vertices first edge
+        Vertex* originholder = e0->origin;
+        e0->origin = e0->destination;
+        e0->destination = originholder;
+
+        // switch vertices second edge
+        originholder = e1->origin;
+        e1->origin = e1->destination;
+        e1->destination = originholder;;
+
+        // switch vertices third edge
+        originholder = e2->origin;
+        e2->origin = e2->destination;
+        e2->destination = originholder;
+
+        // switch order first edge
+        HalfEdge* orderholder = e0->prev;
+        e0->prev = e0->next;
+        e0->next = orderholder;
+
+        // switch order second edge
+        orderholder = e1->prev;
+        e1->prev = e1->next;
+        e1->next = orderholder;
+
+        // switch order first edge
+        orderholder = e2->prev;
+        e2->prev = e2->next;
+        e2->next = orderholder;
+    }
+    visited_faces.push_back(f);
+    orient_faces(e0, visited_faces);
+    orient_faces(e1, visited_faces);
+    orient_faces(e2, visited_faces);
+
+}
+
 /* 
   Example functions that you could implement. But you are 
   free to organise/modify the code however you want.
@@ -253,7 +308,47 @@ void orientMeshes(DCEL & D)
     Vertex* v0 = closest_face->exteriorEdge->origin;
     Vertex* v1 = closest_face->exteriorEdge->destination;
     Vertex* v2 = closest_face->exteriorEdge->next->destination;
+    HalfEdge* e0 = closest_face->exteriorEdge;
+    HalfEdge* e1 = closest_face->exteriorEdge->next;
+    HalfEdge* e2 = closest_face->exteriorEdge->next->next;
     float volume = signed_volume(v0, v1, v2, exterior_point);
+    // if orientation is not correct
+    if (volume > 0)
+    {
+        // switch vertices first edge
+        Vertex* originholder = e0->origin;
+        e0->origin = e0->destination;
+        e0->destination = originholder;
+
+        // switch vertices second edge
+        originholder = e1->origin;
+        e1->origin = e1->destination;
+        e1->destination = originholder;;
+
+        // switch vertices third edge
+        originholder = e2->origin;
+        e2->origin = e2->destination;
+        e2->destination = originholder;
+
+        // switch order first edge
+        HalfEdge* orderholder = e0->prev;
+        e0->prev = e0->next;
+        e0->next = orderholder;
+
+        // switch order second edge
+        orderholder = e1->prev;
+        e1->prev = e1->next;
+        e1->next = orderholder;
+
+        // switch order first edge
+        orderholder = e2->prev;
+        e2->prev = e2->next;
+        e2->next = orderholder;
+    }
+
+    orient_faces(e0, std::vector<Face*>{});
+    orient_faces(e1, std::vector<Face*>{});
+    orient_faces(e2, std::vector<Face*>{});
     std::cout << volume << " volume";
 
 }
@@ -382,12 +477,8 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
 
 int main(int argc, const char * argv[])
 {
-  const char *file_in = "../../cube.obj";
+  const char *file_in = "../../bk_soup.obj";
   const char *file_out = "../../cube.json";
-
-  // Demonstrate how to use the DCEL to get you started (see function implementation below)
-  // you can remove this from the final code
-//  DemoDCEL();
 
   // create an empty DCEL
   DCEL D;
@@ -400,7 +491,7 @@ int main(int argc, const char * argv[])
   //    are consistent with this correct orientation (ie. all the triangle normals 
   //    are pointing outwards).
   orientMeshes(D);
-//    printDCEL(D);
+    printDCEL(D);
   // 4. merge adjacent triangles that are co-planar into larger polygonal faces.
   
   // 5. write the meshes with their faces to a valid CityJSON output file.
