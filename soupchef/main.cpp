@@ -66,7 +66,6 @@ void orient_faces(HalfEdge* e, std::vector<Face*> visited_faces)
     HalfEdge* e0 = f->exteriorEdge;
     HalfEdge* e1 = f->exteriorEdge->next;
     HalfEdge* e2 = f->exteriorEdge->next->next;
-
     for (int i=0;i<visited_faces.size();i++)
     {
         if (f == visited_faces[i])
@@ -108,8 +107,56 @@ void orient_faces(HalfEdge* e, std::vector<Face*> visited_faces)
         e2->prev = e2->next;
         e2->next = orderholder;
     }
+    // check holes
+    if (f->holes.size() > 1)
+    {
+        const auto & holes = f->holes;
+        for (const auto & h : holes )
+        {
+            std::vector<double> point{0,0,0};
+            float volume_face = signed_volume(e0->origin, e0->destination, e0->next->destination, point);
+            float volume_hole = signed_volume(h->origin, h->destination, h->next->destination, point);
+
+            // orientation hole is incorrect if same as face
+            if ((volume_face > 0 and volume_hole > 0) or (volume_face < 0 and volume_hole < 0))
+            {
+                HalfEdge* h0 = h;
+                HalfEdge* h1 = h->next;
+                HalfEdge* h2 = h->next->next;
+                // switch vertices first edge
+                Vertex* originholder = h0->origin;
+                h0->origin = h0->destination;
+                h0->destination = originholder;
+
+                // switch vertices second edge
+                originholder = h1->origin;
+                h1->origin = h1->destination;
+                h1->destination = originholder;;
+
+                // switch vertices third edge
+                originholder = h2->origin;
+                h2->origin = h2->destination;
+                h2->destination = originholder;
+
+                // switch order first edge
+                HalfEdge* orderholder = h0->prev;
+                h0->prev = h0->next;
+                h0->next = orderholder;
+
+                // switch order second edge
+                orderholder = h1->prev;
+                h1->prev = h1->next;
+                h1->next = orderholder;
+
+                // switch order first edge
+                orderholder = h2->prev;
+                h2->prev = h2->next;
+                h2->next = orderholder;
+            }
+        }
+    }
     visited_faces.push_back(f);
-    orient_faces(e0, visited_faces);
+//    orient_faces(e0, visited_faces);
     orient_faces(e1, visited_faces);
     orient_faces(e2, visited_faces);
 
