@@ -156,9 +156,9 @@ void orient_faces(HalfEdge* e, std::vector<Face*> visited_faces)
         }
     }
     visited_faces.push_back(f);
-//    orient_faces(e0, visited_faces);
-    orient_faces(e1, visited_faces);
-    orient_faces(e2, visited_faces);
+    orient_faces(e0, visited_faces);
+//    orient_faces(e1, visited_faces);
+//    orient_faces(e2, visited_faces);
 
 }
 
@@ -524,7 +524,7 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
 
 int main(int argc, const char * argv[])
 {
-  const char *file_in = "../../bk_soup.obj";
+  const char *file_in = "../../polygonal_hole.obj";
   const char *file_out = "../../cube.json";
 
   // create an empty DCEL
