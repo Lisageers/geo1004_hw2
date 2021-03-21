@@ -42,7 +42,7 @@ float signed_volume(Vertex* &a, Vertex* &b, Vertex* &c, std::vector<double> &d)
     std::vector<double> bd{b->x-d[0], b->y-d[1], b->z-d[2]};
     std::vector<double> cd{c->x-d[0], c->y-d[1], c->z-d[2]};
     std::vector<double> crossproduct = cross_product(bd, cd);
-    float volume =  dot_product(ad, crossproduct) / 6;
+    float volume =  dot_product(ad, crossproduct);
     return volume;
 }
 
@@ -455,7 +455,7 @@ void orientMeshes(DCEL & D)
         bool twin0_visited = false;
         bool twin1_visited = false;
         bool twin2_visited = false;
-
+        // check if twin faces are visited
         for (int i=0; i<visited_faces.size();i++)
         {
             if (e->twin->incidentFace == visited_faces[i])
@@ -471,6 +471,7 @@ void orientMeshes(DCEL & D)
                 twin2_visited = true;
             }
         }
+        // update stack if face needs to be visited
         if (!twin0_visited)
         {
             visited_faces.push_back(e->twin->incidentFace);
@@ -487,7 +488,6 @@ void orientMeshes(DCEL & D)
             edgeStack.push(e->next->next->twin);
         }
     }
-    std::cout << volume << " volume";
 
 }
 // 4.
@@ -618,7 +618,7 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
 int main(int argc, const char * argv[])
 {
   const char *file_in = "../../bk_soup.obj";
-  const char *file_out = "../../cube.json";
+  const char *file_out = "../../bk.json";
 
   // create an empty DCEL
   DCEL D;
@@ -637,7 +637,7 @@ int main(int argc, const char * argv[])
   //    are consistent with this correct orientation (ie. all the triangle normals 
   //    are pointing outwards).
   orientMeshes(D);
-    printDCEL(D);
+
   // 4. merge adjacent triangles that are co-planar into larger polygonal faces.
   
   // 5. write the meshes with their faces to a valid CityJSON output file.
