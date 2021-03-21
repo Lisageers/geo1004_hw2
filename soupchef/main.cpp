@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <algorithm>
 #include "DCEL.hpp"
+#include <stack>    // Constructs a stack container adaptor object
+
 
 // forward declarations; these functions are given below main()
 void DemoDCEL();
@@ -293,12 +295,68 @@ std::unordered_map< Vertex*, int> importOBJ(DCEL & D, const char *file_in) {
         values.second[1]->twin = values.second[0];
     }
     return vertices_reverse;
+}
 
-}
     // 2.
-void groupTriangles(DCEL & D) {
-  // to do
+void groupTriangles(DCEL & D, std::unordered_map< HalfEdge*, std::vector<int>> half_edge_map, std::unordered_map< Face*, int> face_map) {
+    std::unordered_map<HalfEdge*, int> mesh_map;
+    for (auto &edge: half_edge_map) {
+        mesh_map.insert({edge.first, 0});
+    }
+// In obj. files, vertices are labelled with a 'v', and faces with an 'f'
+// Start with first line. Create boolean type for whether or not the map has been completely filled
+    int feature = 1;
+    bool edge_map_complete = false;
+// Until edge map is filled, continue finding not-yet-assigned halfedges that belong to triangles, that belong to meshes
+// Use stack tool to iterate through all edges of mesh
+// Get a halfedge that has not been assigned to a mesh
+    while(edge_map_complete == false) {
+        HalfEdge* edge;
+        std::unordered_map<HalfEdge*, int> ::iterator iterate = mesh_map.begin();
+        while (iterate != mesh_map.end()) {
+            if (iterate->second == 0) {
+                edge = iterate->first;
+            }
+            iterate++;
+        }
+
+        std::stack<HalfEdge*> edgeStack;
+        edgeStack.push(edge);
+        // store the edge into the list of holes of the infinite face
+        D.infiniteFace()->holes.push_back(edge);
+        //traverse all the faces to get all meshes
+        while(!edgeStack.empty()) {
+            // Access next element, the top element in the stack
+            HalfEdge* top_element = edgeStack.top();
+            // Remove top element
+            edgeStack.pop();
+            face_map[top_element->incidentFace] = feature;
+            HalfEdge* new_edge = top_element;
+            do {
+                mesh_map[top_element] = 1;
+                if(mesh_map[top_element->twin] == 0) {
+                    edgeStack.push(top_element->twin);
+                }
+                top_element = top_element->next;
+            }
+            while (new_edge != top_element);
+        }
+        feature ++;
+        // Once all edges have been iterated through, stop
+        int no_iterations = 0;
+        // you stop when you traversed all the edges
+        for(auto c: mesh_map) {
+            if(c.second == 0) {
+                no_iterations ++;
+            }
+        }
+        // All meshes found. Exit loop
+        if(no_iterations == 0) {
+            edge_map_complete = true;
+        }
+    }
 }
+
 
 // 3.
 void orientMeshes(DCEL & D)
@@ -534,8 +592,11 @@ int main(int argc, const char * argv[]) {
   // 1. read the triangle soup from the OBJ input file and convert it to the DCEL,
     std::unordered_map<Vertex*, int> verticesdict = importOBJ(D, file_in);
   // 2. group the triangles into meshes,
-  
-  // 3. determine the correct orientation for each mesh and ensure all its triangles 
+    std::unordered_map<HalfEdge*, std::vector<int>> half_edge_map;
+    std::unordered_map<Face*, int> face_map;
+    groupTriangles(D, half_edge_map, face_map);
+    
+    // 3. determine the correct orientation for each mesh and ensure all its triangles
   //    are consistent with this correct orientation (ie. all the triangle normals 
   //    are pointing outwards).
   orientMeshes(D);
