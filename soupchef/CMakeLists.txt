@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 project(geo1004.soupchef)
 
 add_executable(soupchef 
-  main.cpp
-)
+  main.cpp)
 set_target_properties(soupchef PROPERTIES 
   CXX_STANDARD 17
 )
