@@ -322,9 +322,7 @@ void groupTriangles(DCEL & D, std::unordered_map< HalfEdge*, std::vector<int>> h
 
         std::stack<HalfEdge*> edgeStack;
         edgeStack.push(edge);
-        // store the edge into the list of holes of the infinite face
         D.infiniteFace()->holes.push_back(edge);
-        //traverse all the faces to get all meshes
         while(!edgeStack.empty()) {
             // Access next element, the top element in the stack
             HalfEdge* top_element = edgeStack.top();
