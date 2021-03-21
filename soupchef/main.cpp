@@ -458,6 +458,9 @@ void orientMeshes(DCEL & D)
 // 4.
 void mergeCoPlanarFaces(DCEL & D) {
   // to do
+  // merge adjacent triangles that are co-planar into larger polygonal faces
+  // Approach: Where the normals are the same and there is a twin edge?
+
 }
 // 5.
 void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, int> verticesdict) {
@@ -590,8 +593,11 @@ int main(int argc, const char * argv[]) {
   // 1. read the triangle soup from the OBJ input file and convert it to the DCEL,
     std::unordered_map<Vertex*, int> verticesdict = importOBJ(D, file_in);
   // 2. group the triangles into meshes,
-    std::unordered_map<HalfEdge*, std::vector<int>> half_edge_map;
     std::unordered_map<Face*, int> face_map;
+    for(auto &face:face_map) {
+        face_map.insert({face.first, 0});
+    }
+    std::unordered_map<HalfEdge *, std::vector<int>> half_edge_map;
     groupTriangles(D, half_edge_map, face_map);
     
     // 3. determine the correct orientation for each mesh and ensure all its triangles
