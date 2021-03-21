@@ -475,10 +475,11 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
 }
 
 
-int main(int argc, const char * argv[])
-{
-  const char *file_in = "../../bk_soup.obj";
-  const char *file_out = "../../cube.json";
+int main(int argc, const char * argv[]) {
+//    const char *file_in = "../../bk_soup.obj";
+//    const char *file_out = "../../cube.json";
+    const char *file_in = "cube.obj";
+    const char *file_out = "cube.json";
 
   // create an empty DCEL
   DCEL D;
