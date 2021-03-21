@@ -21,6 +21,45 @@ struct pair_hash
         return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
     }
 };
+
+std::vector<double> cross_product(std::vector<double> v0, std::vector<double> v1)
+{
+    double vx = v0[1] * v1[2] - v0[2] * v1[1];
+    double vy = v0[2] * v1[0] - v0[0] * v1[2];
+    double vz = v0[0] * v1[1] - v0[1] * v1[0];
+    return std::vector<double> {vx, vy, vz};
+}
+float dot_product(std::vector<double> v0, std::vector<double> v1)
+{
+    return (v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2]);
+}
+
+float signed_volume(Vertex* &a, Vertex* &b, Vertex* &c, std::vector<double> &d)
+{
+    std::vector<double> ad{a->x-d[0], a->y-d[1], a->z-d[2]};
+    std::vector<double> bd{b->x-d[0], b->y-d[1], b->z-d[2]};
+    std::vector<double> cd{c->x-d[0], c->y-d[1], c->z-d[2]};
+    std::vector<double> crossproduct = cross_product(bd, cd);
+    float volume =  dot_product(ad, crossproduct) / 6;
+    return volume;
+}
+
+// computes the distance of a point to a plane
+float compute_distance(Vertex* &a, Vertex* &b, Vertex* &c, std::vector<double> &p)
+{
+    // calculate plane
+    std::vector<double> ba{b->x-a->x, b->y-a->y, b->z-a->z};
+    std::vector<double> ca{c->x-a->x, c->y-a->y, c->z-a->z};
+    std::vector<double> a_double{a->x, a->y, a->z};
+    std::vector<double> n = cross_product(ba, ca);
+    std::vector<double> plane {n[0], n[1], n[2], -dot_product(n, a_double)};
+
+    // calculate distance
+    float d = (plane[0] * p[0]) + (plane[1]* p[1]) + (plane[2] * p[2]) + plane[3];
+    float e = sqrt(pow(plane[0], 2) + pow(plane[1], 2) + pow(plane[2], 2));
+    return abs(d/e);
+}
+
 /* 
   Example functions that you could implement. But you are 
   free to organise/modify the code however you want.
@@ -158,9 +197,65 @@ std::unordered_map< Vertex*, int> importOBJ(DCEL & D, const char *file_in) {
 void groupTriangles(DCEL & D) {
   // to do
 }
+
 // 3.
-void orientMeshes(DCEL & D) {
-  // to do
+void orientMeshes(DCEL & D)
+{
+    // find lower boundary mesh
+    // initialise min values
+    float minx = INFINITY;
+    float miny = INFINITY;
+    float minz = INFINITY;
+    const auto & faces = D.faces();
+    for ( const auto & f : faces )
+    {
+        // take vertices from face
+        Vertex* v0 = f->exteriorEdge->origin;
+        Vertex* v1 = f->exteriorEdge->destination;
+        Vertex* v2 = f->exteriorEdge->next->destination;
+        // update min if one of the vertices are smaller
+        if (std::min({v0->x, v1->x, v2->x}) < minx)
+        {
+            minx = std::min({v0->x, v1->x, v2->x});
+        }
+        if (std::min({v0->y, v1->y, v2->y}) < miny)
+        {
+            miny = std::min({v0->y, v1->y, v2->y});
+        }
+        if (std::min({v0->z, v1->z, v2->z}) < minz)
+        {
+            minz = std::min({v0->z, v1->z, v2->z});
+        }
+    }
+
+    // calculate point that is outside lower bounding box
+    std::vector<double> exterior_point{minx-5, miny-5, minz-5};
+
+    // find face that is closest to exterior point
+    float min_distance = INFINITY;
+    Face* closest_face;
+    // find triangle with smallest distance to point
+    for ( const auto & f : faces )
+    {
+        // take vertices from face
+        Vertex* v0 = f->exteriorEdge->origin;
+        Vertex* v1 = f->exteriorEdge->destination;
+        Vertex* v2 = f->exteriorEdge->next->destination;
+        float distance = compute_distance(v0, v1, v2, exterior_point);
+        if (distance < min_distance)
+        {
+            min_distance = distance;
+            closest_face = f->exteriorEdge->incidentFace;
+        }
+    }
+
+    // take vertices from closest face
+    Vertex* v0 = closest_face->exteriorEdge->origin;
+    Vertex* v1 = closest_face->exteriorEdge->destination;
+    Vertex* v2 = closest_face->exteriorEdge->next->destination;
+    float volume = signed_volume(v0, v1, v2, exterior_point);
+    std::cout << volume << " volume";
+
 }
 // 4.
 void mergeCoPlanarFaces(DCEL & D) {
@@ -287,7 +382,7 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
 
 int main(int argc, const char * argv[])
 {
-  const char *file_in = "../../cube_soup.obj";
+  const char *file_in = "../../cube.obj";
   const char *file_out = "../../cube.json";
 
   // Demonstrate how to use the DCEL to get you started (see function implementation below)
@@ -299,13 +394,13 @@ int main(int argc, const char * argv[])
 
   // 1. read the triangle soup from the OBJ input file and convert it to the DCEL,
     std::unordered_map<Vertex*, int> verticesdict = importOBJ(D, file_in);
-    printDCEL(D);
   // 2. group the triangles into meshes,
   
   // 3. determine the correct orientation for each mesh and ensure all its triangles 
   //    are consistent with this correct orientation (ie. all the triangle normals 
   //    are pointing outwards).
-  
+  orientMeshes(D);
+//    printDCEL(D);
   // 4. merge adjacent triangles that are co-planar into larger polygonal faces.
   
   // 5. write the meshes with their faces to a valid CityJSON output file.
