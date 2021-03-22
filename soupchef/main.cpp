@@ -327,16 +327,14 @@ void groupTriangles(DCEL & D) {
 
 
 // 3.
-void orientMeshes(DCEL & D)
-{
+void orientMeshes(DCEL & D) {
     // find lower boundary mesh
     // initialise min values
     float minx = INFINITY;
     float miny = INFINITY;
     float minz = INFINITY;
     const auto & faces = D.faces();
-    for ( const auto & f : faces )
-    {
+    for (const auto & f : faces) {
         // take vertices from face
         Vertex* v0 = f->exteriorEdge->origin;
         Vertex* v1 = f->exteriorEdge->destination;
@@ -363,8 +361,7 @@ void orientMeshes(DCEL & D)
     float min_distance = INFINITY;
     Face* closest_face;
     // find triangle with smallest distance to point
-    for ( const auto & f : faces )
-    {
+    for (const auto &f: faces) {
         // take vertices from face
         Vertex* v0 = f->exteriorEdge->origin;
         Vertex* v1 = f->exteriorEdge->destination;
@@ -386,8 +383,7 @@ void orientMeshes(DCEL & D)
     HalfEdge* e2 = closest_face->exteriorEdge->next->next;
     float volume = signed_volume(v0, v1, v2, exterior_point);
     // if orientation is not correct
-    if (volume < 0)
-    {
+    if (volume < 0) {
         // switch vertices first edge
         Vertex* originholder = e0->origin;
         e0->origin = e0->destination;
@@ -428,8 +424,7 @@ void orientMeshes(DCEL & D)
     visited_faces.push_back(e0->twin->incidentFace);
     visited_faces.push_back(e1->twin->incidentFace);
     visited_faces.push_back(e2->twin->incidentFace);
-    while(!edgeStack.empty())
-    {
+    while(!edgeStack.empty()) {
         HalfEdge* e = edgeStack.top();
         edgeStack.pop();
         orient_faces(e);
@@ -437,8 +432,7 @@ void orientMeshes(DCEL & D)
         bool twin1_visited = false;
         bool twin2_visited = false;
         // check if twin faces are visited
-        for (int i=0; i<visited_faces.size();i++)
-        {
+        for (int i=0; i<visited_faces.size();i++) {
             if (e->twin->incidentFace == visited_faces[i])
             {
                 twin0_visited = true;
@@ -453,29 +447,27 @@ void orientMeshes(DCEL & D)
             }
         }
         // update stack if face needs to be visited
-        if (!twin0_visited)
-        {
+        if (!twin0_visited) {
             visited_faces.push_back(e->twin->incidentFace);
             edgeStack.push(e->twin);
         }
-        if (!twin1_visited)
-        {
+        if (!twin1_visited) {
             visited_faces.push_back(e->next->twin->incidentFace);
             edgeStack.push(e->next->twin);
         }
-        if (!twin2_visited)
-        {
+        if (!twin2_visited) {
             visited_faces.push_back(e->next->next->twin->incidentFace);
             edgeStack.push(e->next->next->twin);
         }
     }
-
 }
+
 // 4.
 void mergeCoPlanarFaces(DCEL & D) {
   // to do
   // merge adjacent triangles that are co-planar into larger polygonal faces
-  // Approach: Where the normals are the same and there is a twin edge?
+
+  // Approach: Where the normals are the same and there is a twin edge
 
 }
 // 5.
@@ -596,12 +588,9 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
     myfile.close();
 }
 
-int main(int argc, const char * argv[])
-{
-//  const char *file_in = "../../bk_soup.obj";
-//  const char *file_out = "../../bk.json";
-    const char *file_in = "../../cube.obj";
-    const char *file_out = "../../cube.json";
+int main(int argc, const char * argv[]) {
+  const char *file_in = "../../bk_soup.obj";
+  const char *file_out = "../../bk.json";
 
   // create an empty DCEL
   DCEL D;
@@ -615,7 +604,7 @@ int main(int argc, const char * argv[])
     // 3. determine the correct orientation for each mesh and ensure all its triangles
   //    are consistent with this correct orientation (ie. all the triangle normals 
   //    are pointing outwards).
-  orientMeshes(D);
+    orientMeshes(D);
 
   // 4. merge adjacent triangles that are co-planar into larger polygonal faces.
   
