@@ -286,61 +286,42 @@ std::unordered_map< Vertex*, int> importOBJ(DCEL & D, const char *file_in) {
     return vertices_reverse;
 }
 
-    // 2.
-void groupTriangles(DCEL & D, std::unordered_map< HalfEdge*, std::vector<int>> half_edge_map, std::unordered_map< Face*, int> face_map) {
-    std::unordered_map<HalfEdge*, int> mesh_map;
-    for (auto &edge: half_edge_map) {
-        mesh_map.insert({edge.first, 0});
-    }
-// In obj. files, vertices are labelled with a 'v', and faces with an 'f'
-// Start with first line. Create boolean type for whether or not the map has been completely filled
-    int feature = 1;
-    bool edge_map_complete = false;
-// Until edge map is filled, continue finding not-yet-assigned halfedges that belong to triangles, that belong to meshes
-// Use stack tool to iterate through all edges of mesh
-// Get a halfedge that has not been assigned to a mesh
-    while(edge_map_complete == false) {
-        HalfEdge* edge;
-        std::unordered_map<HalfEdge*, int> ::iterator iterate = mesh_map.begin();
-        while (iterate != mesh_map.end()) {
-            if (iterate->second == 0) {
-                edge = iterate->first;
-            }
-            iterate++;
+// 2.
+void groupTriangles(DCEL & D) {
+    std::stack<Face*> faceStack;
+    std::list<Face*> allfacesList;
+    std::list<Face*> meshList;
+    for (auto const &current_face:D.faces()) {
+        if (std::find(allfacesList.begin(), allfacesList.end(), current_face.get()) != allfacesList.end()) {
+            continue;
         }
+        else {
+            faceStack.push(current_face.get());
+        }
+        meshList.clear();
 
-        std::stack<HalfEdge*> edgeStack;
-        edgeStack.push(edge);
-        D.infiniteFace()->holes.push_back(edge);
-        while(!edgeStack.empty()) {
-            // Access next element, the top element in the stack
-            HalfEdge* top_element = edgeStack.top();
-            // Remove top element
-            edgeStack.pop();
-            face_map[top_element->incidentFace] = feature;
-            HalfEdge* new_edge = top_element;
-            do {
-                mesh_map[top_element] = 1;
-                if(mesh_map[top_element->twin] == 0) {
-                    edgeStack.push(top_element->twin);
+        while (!faceStack.empty()) {
+            // Accessing the next element in the stack of faces
+            Face* new_face = faceStack.top();
+            // Removing the top element from the stack
+            faceStack.pop();
+            // Constructing a vector for the current_face's three edges by accessing the exteriorEdge and next pointers
+            std::vector<HalfEdge*> face_vector = {new_face->exteriorEdge, new_face->exteriorEdge->next, new_face->exteriorEdge->next->next};
+            for(auto const &current_edge: face_vector) {
+                if (std::find(allfacesList.begin(), allfacesList.end(), (current_edge->twin->incidentFace)) != allfacesList.end()) {
+                    continue;
                 }
-                top_element = top_element->next;
-            }
-            while (new_edge != top_element);
-        }
-        feature ++;
-        // Once all edges have been iterated through, stop
-        int no_iterations = 0;
-        // you stop when you traversed all the edges
-        for(auto c: mesh_map) {
-            if(c.second == 0) {
-                no_iterations ++;
+                else {
+                    // Add the current edge to the stack of faces, the list of all faces, and the mesh list.
+                    faceStack.push(current_edge->twin->incidentFace);
+                    allfacesList.push_back(current_edge->twin->incidentFace);
+                    meshList.push_back(current_edge->twin->incidentFace);
+                }
             }
         }
-        // All meshes found. Exit loop
-        if(no_iterations == 0) {
-            edge_map_complete = true;
-        }
+        // infiniteFace stores all holes in the mesh
+        // If current_face stack is empty, then file the remaining interior holes by adding one of the edges of each interior hole, to infiniteFace
+        D.infiniteFace()->holes.push_back(current_face->exteriorEdge);
     }
 }
 
@@ -617,21 +598,19 @@ void exportCityJSON(DCEL & D, const char *file_out, std::unordered_map<Vertex*, 
 
 int main(int argc, const char * argv[])
 {
-  const char *file_in = "../../bk_soup.obj";
-  const char *file_out = "../../bk.json";
+//  const char *file_in = "../../bk_soup.obj";
+//  const char *file_out = "../../bk.json";
+    const char *file_in = "../../cube.obj";
+    const char *file_out = "../../cube.json";
 
   // create an empty DCEL
   DCEL D;
 
   // 1. read the triangle soup from the OBJ input file and convert it to the DCEL,
     std::unordered_map<Vertex*, int> verticesdict = importOBJ(D, file_in);
+    importOBJ(D, file_in);
   // 2. group the triangles into meshes,
-    std::unordered_map<Face*, int> face_map;
-    for(auto &face:face_map) {
-        face_map.insert({face.first, 0});
-    }
-    std::unordered_map<HalfEdge *, std::vector<int>> half_edge_map;
-//    groupTriangles(D, half_edge_map, face_map);
+    groupTriangles(D);
     
     // 3. determine the correct orientation for each mesh and ensure all its triangles
   //    are consistent with this correct orientation (ie. all the triangle normals 
