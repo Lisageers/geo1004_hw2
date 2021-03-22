@@ -11,7 +11,6 @@
 
 
 // forward declarations; these functions are given below main()
-void DemoDCEL();
 void printDCEL(DCEL & D);
 
 typedef std::pair<int,int> pair;
@@ -291,8 +290,9 @@ std::unordered_map< Face*, int> groupTriangles(DCEL & D) {
     std::stack<Face*> faceStack;
     std::list<Face*> allfacesList;
     std::list<Face*> meshList;
-    std::unordered_map<Face*, int> mesh_List;
-
+    std::unordered_map<Face*, int> mesh_list;
+    int feature = 1;
+    bool map_complete = false;
     for (auto const &current_face:D.faces()) {
         if (std::find(allfacesList.begin(), allfacesList.end(), current_face.get()) != allfacesList.end()) {
             continue;
@@ -325,7 +325,7 @@ std::unordered_map< Face*, int> groupTriangles(DCEL & D) {
         // If current_face stack is empty, then file the remaining interior holes by adding one of the edges of each interior hole, to infiniteFace
         D.infiniteFace()->holes.push_back(current_face->exteriorEdge);
     }
-    return mesh_List;
+    return mesh_list;
 }
 
 
@@ -648,150 +648,5 @@ void printDCEL(DCEL & D) {
   for ( const auto & f : faces ) {
     std::cout << "  * " << *f << "\n";
   }
-
-}
-
-
-void DemoDCEL() {
-
-  std::cout << "/// STEP 1 Creating empty DCEL...\n";
-  DCEL D;
-  printDCEL(D);
-
-  /*
-
-  v2 (0,1,0)
-   o
-   |\
-   | \
-   |  \
-   o---o v1 (1,0,0)
-  v0
-  (0,0,0)
-
-  We will construct the DCEL of a single triangle 
-  in the plane z=0 (as shown above).
-
-  This will require:
-    3 vertices
-    6 halfedges (2 for each edge)
-    1 face
-
-  */
-  std::cout << "\n/// STEP 2 Adding triangle vertices...\n";
-  Vertex* v0 = D.createVertex(0,0,0);
-  Vertex* v1 = D.createVertex(1,0,0);
-  Vertex* v2 = D.createVertex(0,1,0);
-  printDCEL(D);
-
-  std::cout << "\n/// STEP 3 Adding triangle half-edges...\n";
-  HalfEdge* e0 = D.createHalfEdge();
-  HalfEdge* e1 = D.createHalfEdge();
-  HalfEdge* e2 = D.createHalfEdge();
-  HalfEdge* e3 = D.createHalfEdge();
-  HalfEdge* e4 = D.createHalfEdge();
-  HalfEdge* e5 = D.createHalfEdge();
-  printDCEL(D);
-
-  std::cout << "\n/// STEP 4 Adding triangle face...\n";
-  Face* f0 = D.createFace();
-  printDCEL(D);
-
-  std::cout << "\n/// STEP 5 Setting links...\n";
-  e0->origin = v0;
-  e0->destination = v1;
-  e0->twin = e3;
-  e0->next = e1;
-  e0->prev = e2;
-  e0->incidentFace = f0;
-
-  e3->origin = v1;
-  e3->destination = v0;
-  e3->twin = e0;
-  e3->next = e5;
-  e3->prev = e4;
-
-  /* 
-  If a half-edge is incident to 'open space' (ie not an actual face with an exterior boundary), 
-  we use the infiniteFace which is predifined in the DCEL class
-  */
-  e3->incidentFace = D.infiniteFace();
-
-  e1->origin = v1;
-  e1->destination = v2;
-  e1->twin = e4;
-  e1->next = e2;
-  e1->prev = e0;
-  e1->incidentFace = f0;
-
-  e4->origin = v2;
-  e4->destination = v1;
-  e4->twin = e1;
-  e4->next = e3;
-  e4->prev = e5;
-  e4->incidentFace = D.infiniteFace();
-
-  e2->origin = v2;
-  e2->destination = v0;
-  e2->twin = e5;
-  e2->next = e0;
-  e2->prev = e1;
-  e2->incidentFace = f0;
-
-  e5->origin = v0;
-  e5->destination = v2;
-  e5->twin = e2;
-  e5->next = e4;
-  e5->prev = e3;
-  e5->incidentFace = D.infiniteFace();
-
-  f0->exteriorEdge = e0;
-  printDCEL(D);
-
-
-  std::cout << "\n/// STEP 6 Traversing exterior vertices of f0...\n";
-  /* 
-  if all is well in the DCEL, following a chain of half-edges (ie keep going to e.next)
-  should lead us back the the half-edge where we started.
-  */
-  HalfEdge* e = f0->exteriorEdge;
-  const HalfEdge* e_start = e;
-  do {
-    std::cout << " -> " << *e->origin << "\n";
-    e = e->next;
-  } while ( e_start!=e) ; // we stop the loop when e_start==e (ie. we are back where we started)
-  
-  
-  std::cout << "\n/// STEP 7 eliminating v0...\n";
-  v0->eliminate();
-  printDCEL(D);
-  
-  /* 
-  We just eliminated v0. At the same time we know there are elements that still 
-  pointers to v0 (ie the edges e0, e2, e3, e5). This means we can NOT call D.cleanup()!
-  If you do this anyways, the program may crash. 
-  
-  Eg. if you uncomment the following there could be a crash/stall of the program.
-  */
-  // D.cleanup(); // this will remove v0 from memory (because we just eliminated v0 and the cleanup() function simply removes all the eliminated elements)
-  // std::cout << *v0 << "\n"; // we try to access that memory, but v0 is gone -> undefined behaviour 
-  // std::cout << *e0->origin << "\n"; // this equivalent to the previous line (both point to the same memory address)
-
-
-  std::cout << "\n/// STEP 8 eliminating all the remaining DCEL elements\n";
-  for ( const auto & v : D.vertices() ) {
-    v->eliminate();
-  }
-  for ( const auto & e : D.halfEdges() ) {
-    e->eliminate();
-  }
-  for ( const auto & f : D.faces() ) {
-    f->eliminate();
-  }
-  printDCEL(D);
-
-  std::cout << "\n/// STEP 9 cleaning up the DCEL\n";
-  D.cleanup();
-  printDCEL(D);
 
 }
