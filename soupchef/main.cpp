@@ -287,10 +287,12 @@ std::unordered_map< Vertex*, int> importOBJ(DCEL & D, const char *file_in) {
 }
 
 // 2.
-void groupTriangles(DCEL & D) {
+std::unordered_map< Face*, int> groupTriangles(DCEL & D) {
     std::stack<Face*> faceStack;
     std::list<Face*> allfacesList;
     std::list<Face*> meshList;
+    std::unordered_map<Face*, int> mesh_List;
+
     for (auto const &current_face:D.faces()) {
         if (std::find(allfacesList.begin(), allfacesList.end(), current_face.get()) != allfacesList.end()) {
             continue;
@@ -323,6 +325,7 @@ void groupTriangles(DCEL & D) {
         // If current_face stack is empty, then file the remaining interior holes by adding one of the edges of each interior hole, to infiniteFace
         D.infiniteFace()->holes.push_back(current_face->exteriorEdge);
     }
+    return mesh_List;
 }
 
 
@@ -597,10 +600,10 @@ int main(int argc, const char * argv[]) {
 
   // 1. read the triangle soup from the OBJ input file and convert it to the DCEL,
     std::unordered_map<Vertex*, int> verticesdict = importOBJ(D, file_in);
-    importOBJ(D, file_in);
+
   // 2. group the triangles into meshes,
-    groupTriangles(D);
-    
+    std::unordered_map<Face*, int> meshes_map = groupTriangles(D);
+
     // 3. determine the correct orientation for each mesh and ensure all its triangles
   //    are consistent with this correct orientation (ie. all the triangle normals 
   //    are pointing outwards).
